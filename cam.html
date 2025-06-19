@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optical System Camera Coupling Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group h3 {
+            margin-bottom: 15px;
+            color: #00ffff;
+            border-bottom: 2px solid #00ffff;
+            padding-bottom: 5px;
+            font-size: 1.1em;
+        }
+        
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .control-item label {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .control-item input, .control-item select {
+            width: 70px;
+            padding: 4px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            color: black;
+            text-align: center;
+            font-size: 0.85em;
+        }
+        
+        .control-item select option {
+            background: white;
+            color: black;
+        }
+        
+        .control-item input:focus, .control-item select:focus {
+            outline: 2px solid #00ffff;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .visualization {
+            position: relative;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        canvas {
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            background: #000;
+            margin-bottom: 15px;
+        }
+        
+        .performance-panel {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .performance-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.85em;
+        }
+        
+        .performance-item strong {
+            color: #00ffff;
+            display: block;
+            margin-bottom: 3px;
+            font-size: 0.8em;
+        }
+        
+        .warning, .error, .info {
+            padding: 8px;
+            border-radius: 6px;
+            margin: 5px 0;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .warning { background: rgba(255, 165, 0, 0.3); border: 1px solid #FFA500; color: #FFA500; }
+        .error { background: rgba(255, 0, 0, 0.3); border: 1px solid #FF0000; color: #FF4444; }
+        .info { background: rgba(0, 255, 255, 0.3); border: 1px solid #00FFFF; color: #00FFFF; }
+        
+        .optical-path {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .path-item {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        .path-arrow {
+            color: #00ffff;
+            margin: 0 5px;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Optical System Camera Coupling Calculator</h1>
+        
+        <div class="main-content">           
+            <div class="panel">
+                <div class="control-group">
+                    <h3>Objective Lens</h3>
+                    <div class="control-item">
+                        <label>Magnification:</label>
+                        <input type="number" id="objectiveMag" value="5" min="1" max="100" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label>Numerical Aperture:</label>
+                        <input type="number" id="objectiveNA" value="0.14" min="0.05" max="1.4" step="0.01">
+                    </div>
+                    <div class="control-item">
+                        <label>Working Distance (mm):</label>
+                        <input type="number" id="workingDistance" value="34" min="1" max="100" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label>Field Number:</label>
+                        <input type="number" id="fieldNumber" value="22" min="10" max="30" step="1">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Tube Lens</h3>
+                    <div class="control-item">
+                        <label>Focal Length (mm):</label>
+                        <input type="number" id="tubeFocalLength" value="200" min="100" max="500" step="10">
+                    </div>
+                    <div class="control-item">
+                        <label>Diameter (mm):</label>
+                        <input type="number" id="tubeDiameter" value="30" min="20" max="50" step="1">
+                    </div>
+                    <div class="control-item">
+                        <label>Transmission (%):</label>
+                        <input type="number" id="tubeTransmission" value="98" min="90" max="99" step="0.1">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Camera</h3>
+                    <div class="control-item">
+                        <label>Sensor Width (mm):</label>
+                        <input type="number" id="sensorWidth" value="13.3" min="5" max="50" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label>Sensor Height (mm):</label>
+                        <input type="number" id="sensorHeight" value="13.3" min="5" max="50" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label>Pixel Size (μm):</label>
+                        <input type="number" id="pixelSize" value="6.5" min="1" max="20" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label>Quantum Efficiency (%):</label>
+                        <input type="number" id="quantumEfficiency" value="85" min="30" max="95" step="1">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Mount System</h3>
+                    <div class="control-item">
+                        <label>Mount Type:</label>
+                        <select id="mountType">
+                            <option value="C-mount">C-mount</option>
+                            <option value="CS-mount">CS-mount</option>
+                            <option value="F-mount">F-mount</option>
+                            <option value="T-mount">T-mount</option>
+                            <option value="M42">M42</option>
+                            <option value="Custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label>Flange Distance (mm):</label>
+                        <input type="number" id="flangeDistance" value="17.526" min="5" max="50" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label>Extension Tubes (mm):</label>
+                        <input type="number" id="extensionTubes" value="0" min="0" max="100" step="1">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>System Settings</h3>
+                    <div class="control-item">
+                        <label>Wavelength (nm):</label>
+                        <input type="number" id="wavelength" value="550" min="400" max="700" step="10">
+                    </div>
+                    <div class="control-item">
+                        <label>Object Size (mm):</label>
+                        <input type="number" id="objectSize" value="50" min="5" max="200" step="1">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="visualization">
+                    <canvas id="systemCanvas" width="350" height="280"></canvas>
+                    
+                    <div class="optical-path">
+                        <div class="path-item">
+                            Object <span class="path-arrow">→</span> Objective <span class="path-arrow">→</span> Tube Lens <span class="path-arrow">→</span> Mount <span class="path-arrow">→</span> Camera
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="performance-panel">
+                    <div class="performance-grid">
+                        <div class="performance-item">
+                            <strong>Total Magnification</strong>
+                            <span id="totalMagnification">5.0×</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>Field of View</strong>
+                            <span id="fieldOfView">4.4mm</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>Spatial Resolution</strong>
+                            <span id="spatialResolution">2.4μm</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>Pixel Resolution</strong>
+                            <span id="pixelResolution">1.3μm</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>Light Collection</strong>
+                            <span id="lightCollection">85%</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>System Transmission</strong>
+                            <span id="systemTransmission">79%</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>Nyquist Criterion</strong>
+                            <span id="nyquistCriterion">Met</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>Vignetting Level</strong>
+                            <span id="vignettingLevel">None</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>Image Coverage</strong>
+                            <span id="imageCoverage">100%</span>
+                        </div>
+                        <div class="performance-item">
+                            <strong>Corner Illumination</strong>
+                            <span id="cornerIllumination">95%</span>
+                        </div>
+                    </div>
+                    
+                    <div id="systemAnalysis"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mountSpecs = {
+            'C-mount': { flangeDistance: 17.526, diameter: 23.1 },
+            'CS-mount': { flangeDistance: 12.5, diameter: 23.1 },
+            'F-mount': { flangeDistance: 46.5, diameter: 41 },
+            'T-mount': { flangeDistance: 55, diameter: 38.1 },
+            'M42': { flangeDistance: 45.5, diameter: 38.1 },
+            'Custom': { flangeDistance: 17.526, diameter: 25.4 }
+        };
+
+        function updateMountSpecs() {
+            const mountType = document.getElementById('mountType').value;
+            const specs = mountSpecs[mountType];
+            if (specs && mountType !== 'Custom') {
+                document.getElementById('flangeDistance').value = specs.flangeDistance;
+            }
+        }
+
+        function updateSimulation() {
+            const params = {
+                objectSize: parseFloat(document.getElementById('objectSize').value),
+                objectiveMag: parseFloat(document.getElementById('objectiveMag').value),
+                objectiveNA: parseFloat(document.getElementById('objectiveNA').value),
+                workingDistance: parseFloat(document.getElementById('workingDistance').value),
+                fieldNumber: parseFloat(document.getElementById('fieldNumber').value),
+                tubeFocalLength: parseFloat(document.getElementById('tubeFocalLength').value),
+                tubeDiameter: parseFloat(document.getElementById('tubeDiameter').value),
+                tubeTransmission: parseFloat(document.getElementById('tubeTransmission').value) / 100,
+                sensorWidth: parseFloat(document.getElementById('sensorWidth').value),
+                sensorHeight: parseFloat(document.getElementById('sensorHeight').value),
+                pixelSize: parseFloat(document.getElementById('pixelSize').value),
+                quantumEfficiency: parseFloat(document.getElementById('quantumEfficiency').value) / 100,
+                mountType: document.getElementById('mountType').value,
+                flangeDistance: parseFloat(document.getElementById('flangeDistance').value),
+                extensionTubes: parseFloat(document.getElementById('extensionTubes').value),
+                wavelength: parseFloat(document.getElementById('wavelength').value)
+            };
+
+            const results = calculateSystemPerformance(params);
+            updatePerformanceDisplay(results);
+            drawSystemLayout(params, results);
+            performSystemAnalysis(params, results);
+        }
+
+        function calculateSystemPerformance(params) {
+            const mountSpec = mountSpecs[params.mountType] || { diameter: 25.4 };
+            const mountAperture = mountSpec.diameter;
+
+            const effectiveBackFocus = params.flangeDistance + params.extensionTubes;
+            const magnificationCorrection = effectiveBackFocus > 180 ? params.tubeFocalLength / effectiveBackFocus : 1.0;
+            const totalMagnification = params.objectiveMag * magnificationCorrection;
+
+            const fieldOfView = params.fieldNumber / totalMagnification;
+            const spatialResolution = 0.61 * (params.wavelength / 1000) / params.objectiveNA;
+            const pixelResolution = params.pixelSize / totalMagnification;
+
+            // Fixed light collection calculation
+            const tubeNA = params.tubeDiameter / (2 * params.tubeFocalLength);
+            const lightCollection = Math.min(100, Math.pow(params.objectiveNA / tubeNA, 2) * 100);
+            
+            const systemTransmission = params.tubeTransmission * params.quantumEfficiency;
+            const nyquistCriterion = pixelResolution <= (spatialResolution / 2);
+
+            const sensorDiagonal = Math.sqrt(params.sensorWidth * params.sensorWidth + params.sensorHeight * params.sensorHeight);
+            const tubeImageCircle = Math.min(params.tubeDiameter * 0.8, mountAperture * 0.9);
+            const imageCoverage = Math.min(100, (tubeImageCircle / sensorDiagonal) * 100);
+
+            const maxFieldAngle = Math.atan(sensorDiagonal / (2 * params.tubeFocalLength)) * (180 / Math.PI);
+            const mountVignetting = Math.min(1, mountAperture / (sensorDiagonal * 1.2));
+            const cornerIllumination = Math.pow(Math.cos(maxFieldAngle * Math.PI / 180), 4) * mountVignetting * 100;
+
+            let vignettingLevel;
+            if (imageCoverage < 90) vignettingLevel = "Severe";
+            else if (cornerIllumination < 70) vignettingLevel = "Moderate";
+            else if (cornerIllumination < 85) vignettingLevel = "Mild";
+            else vignettingLevel = "None";
+
+            return {
+                totalMagnification, fieldOfView, spatialResolution, pixelResolution,
+                lightCollection, systemTransmission, nyquistCriterion,
+                imageCoverage, cornerIllumination, vignettingLevel, tubeImageCircle,
+                magnificationCorrection, mountAperture
+            };
+        }
+
+        function updatePerformanceDisplay(results) {
+            document.getElementById('totalMagnification').textContent = results.totalMagnification.toFixed(1) + '×';
+            document.getElementById('fieldOfView').textContent = results.fieldOfView.toFixed(2) + 'mm';
+            document.getElementById('spatialResolution').textContent = results.spatialResolution.toFixed(2) + 'μm';
+            document.getElementById('pixelResolution').textContent = results.pixelResolution.toFixed(2) + 'μm';
+            document.getElementById('lightCollection').textContent = results.lightCollection.toFixed(0) + '%';
+            document.getElementById('systemTransmission').textContent = (results.systemTransmission * 100).toFixed(0) + '%';
+            document.getElementById('nyquistCriterion').textContent = results.nyquistCriterion ? 'Met' : 'Not Met';
+            document.getElementById('vignettingLevel').textContent = results.vignettingLevel;
+            document.getElementById('imageCoverage').textContent = results.imageCoverage.toFixed(1) + '%';
+            document.getElementById('cornerIllumination').textContent = results.cornerIllumination.toFixed(0) + '%';
+        }
+
+        function drawSystemLayout(params, results) {
+            const canvas = document.getElementById('systemCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 350, 280);
+
+            const objX = 15, objY = 120, objW = 40, objH = 25;
+            const lensX = 100, lensY = 130, lensR = 12;
+            const tubeX = 180, tubeY = 130, tubeR = 15;
+            const mountX = 240, mountY = 125, mountW = 15, mountH = 20;
+            const camX = 270, camY = 125, camW = 20, camH = 20;
+
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'center';
+
+            // Draw object
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(objX, objY, objW, objH);
+            ctx.fillStyle = 'black';
+            ctx.fillText('Object', objX + objW/2, objY - 10);
+            ctx.fillText(params.objectSize + 'mm', objX + objW/2, objY + objH + 15);
+
+            // Draw objective
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(lensX, lensY, lensR, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle = 'white';
+            ctx.fillText('Objective', lensX, lensY - 20);
+            ctx.fillText(params.objectiveMag + '×', lensX, lensY + 25);
+            ctx.fillText('NA' + params.objectiveNA, lensX, lensY + 35);
+
+            // Draw tube lens
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(tubeX, tubeY, tubeR, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle = 'white';
+            ctx.fillText('Tube Lens', tubeX, tubeY - 25);
+            ctx.fillText('f=' + params.tubeFocalLength, tubeX, tubeY + 25);
+            ctx.fillText('⌀' + params.tubeDiameter + 'mm', tubeX, tubeY + 35);
+
+            // Draw mount
+            ctx.fillStyle = '#888888';
+            ctx.fillRect(mountX, mountY, mountW, mountH);
+            ctx.fillStyle = 'white';
+            ctx.fillText(params.mountType, mountX + mountW/2, mountY - 15);
+            ctx.fillText(params.flangeDistance.toFixed(1) + 'mm', mountX + mountW/2, mountY + mountH + 15);
+            if (params.extensionTubes > 0) {
+                ctx.fillText('+' + params.extensionTubes + 'mm', mountX + mountW/2, mountY + mountH + 25);
+            }
+
+            // Draw camera
+            ctx.fillStyle = '#ff6b6b';
+            ctx.fillRect(camX, camY, camW, camH);
+            if (results.vignettingLevel !== "None") {
+                const vignetteGradient = ctx.createRadialGradient(camX + camW/2, camY + camH/2, 0, camX + camW/2, camY + camH/2, camW/2);
+                vignetteGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+                vignetteGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+                ctx.fillStyle = vignetteGradient;
+                ctx.fillRect(camX, camY, camW, camH);
+            }
+            ctx.fillStyle = 'white';
+            ctx.fillText('Camera', camX + camW/2, camY - 15);
+            ctx.fillText(params.sensorWidth + '×' + params.sensorHeight, camX + camW/2, camY + camH + 15);
+            ctx.fillText(params.pixelSize + 'μm px', camX + camW/2, camY + camH + 25);
+
+            // Draw image circle
+            ctx.strokeStyle = results.imageCoverage < 100 ? '#ff4444' : '#00ff00';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            const circleRadius = (results.tubeImageCircle / Math.max(params.sensorWidth, params.sensorHeight)) * camW/2;
+            ctx.beginPath();
+            ctx.arc(camX + camW/2, camY + camH/2, Math.min(circleRadius, camW/2), 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw light path
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(objX + objW, objY + objH/2);
+            ctx.lineTo(lensX - lensR, lensY);
+            ctx.moveTo(lensX + lensR, lensY);
+            ctx.lineTo(tubeX - tubeR, tubeY);
+            ctx.moveTo(tubeX + tubeR, tubeY);
+            ctx.lineTo(mountX, mountY + mountH/2);
+            ctx.moveTo(mountX + mountW, mountY + mountH/2);
+            ctx.lineTo(camX, camY + camH/2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Performance indicators
+            const indicators = [
+                {name: 'Nyquist', color: results.nyquistCriterion ? '#00ff00' : '#ff4444'},
+                {name: 'Light', color: results.lightCollection > 70 ? '#00ff00' : results.lightCollection > 40 ? '#ffff00' : '#ff4444'},
+                {name: 'Vignet', color: results.vignettingLevel === "None" ? '#00ff00' : results.vignettingLevel === "Mild" ? '#ffff00' : '#ff4444'},
+                {name: 'Cover', color: results.imageCoverage >= 100 ? '#00ff00' : results.imageCoverage > 95 ? '#ffff00' : '#ff4444'}
+            ];
+
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'left';
+            indicators.forEach((indicator, i) => {
+                const y = 15 + i * 15;
+                ctx.fillStyle = indicator.color;
+                ctx.fillRect(10, y, 10, 10);
+                ctx.fillStyle = 'white';
+                ctx.fillText(indicator.name, 23, y + 7);
+            });
+        }
+
+        function performSystemAnalysis(params, results) {
+            const analysisDiv = document.getElementById('systemAnalysis');
+            let analysis = '';
+
+            if (results.vignettingLevel === "Severe") {
+                analysis += '<div class="error">Severe vignetting: ' + results.imageCoverage.toFixed(1) + '% coverage. Consider larger tube lens or smaller sensor.</div>';
+            } else if (results.vignettingLevel === "Moderate") {
+                analysis += '<div class="warning">Moderate vignetting: ' + results.cornerIllumination.toFixed(0) + '% corner illumination.</div>';
+            } else if (results.vignettingLevel === "Mild") {
+                analysis += '<div class="warning">Mild vignetting: ' + results.cornerIllumination.toFixed(0) + '% corner illumination.</div>';
+            } else {
+                analysis += '<div class="info">Good illumination uniformity across sensor.</div>';
+            }
+
+            if (!results.nyquistCriterion) {
+                analysis += '<div class="error">Undersampling: Pixel (' + results.pixelResolution.toFixed(2) + 'μm) > Nyquist (' + (results.spatialResolution/2).toFixed(2) + 'μm).</div>';
+            } else if (results.pixelResolution < results.spatialResolution / 3) {
+                analysis += '<div class="warning">Oversampling: May have lower light efficiency.</div>';
+            } else {
+                analysis += '<div class="info">Good pixel-resolution matching.</div>';
+            }
+
+            if (results.lightCollection < 50) {
+                analysis += '<div class="error">Poor light collection (' + results.lightCollection.toFixed(0) + '%): Consider larger tube lens or higher NA.</div>';
+            } else if (results.lightCollection < 70) {
+                analysis += '<div class="warning">Moderate light collection (' + results.lightCollection.toFixed(0) + '%).</div>';
+            } else {
+                analysis += '<div class="info">Good light collection (' + results.lightCollection.toFixed(0) + '%).</div>';
+            }
+
+            if (params.extensionTubes > 0) {
+                analysis += '<div class="info">Extension tubes: ' + params.extensionTubes + 'mm. Mag correction: ' + results.magnificationCorrection.toFixed(3) + '.</div>';
+            }
+
+            analysisDiv.innerHTML = analysis;
+        }
+
+        document.getElementById('mountType').addEventListener('change', function() {
+            updateMountSpecs();
+            updateSimulation();
+        });
+
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', updateSimulation);
+        });
+
+        updateMountSpecs();
+        updateSimulation();
+    </script>
+</body>
+</html>
